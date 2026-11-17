@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Python Backend (Ruff + Pytest + E2E Smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Lint and format check
+        working-directory: backend
+        run: |
+          uv run ruff format --check .
+          uv run ruff check .
+
+      - name: Run pytest suite
+        working-directory: backend
+        run: uv run pytest -v
+
+      - name: Run real OS-process restart E2E smoke
+        run: ./scripts/e2e_smoke.sh
+
+  flutter-web:
+    name: Flutter Workbench (Analyze + Test + Web Build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install pub dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Format and static analysis
+        working-directory: app
+        run: |
+          dart format --output=none --set-exit-if-changed lib/ test/
+          dart analyze lib/ test/
+
+      - name: Run unit and responsive widget tests
+        working-directory: app
+        run: flutter test
+
+      - name: Build production Web bundle
+        working-directory: app
+        run: flutter build web

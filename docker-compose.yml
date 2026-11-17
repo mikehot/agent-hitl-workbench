@@ -1,0 +1,18 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "127.0.0.1:8095:8095"
+    environment:
+      WORKBENCH_MODE: ${WORKBENCH_MODE:-replay}
+      WORKBENCH_SQLITE_PATH: /data/workbench.db
+      WORKBENCH_LLM_BASE_URL: ${WORKBENCH_LLM_BASE_URL:-http://host.docker.internal:1234/v1}
+      WORKBENCH_LLM_MODEL_ID: ${WORKBENCH_LLM_MODEL_ID:-qwen/qwen3.8-27b}
+      WORKBENCH_LLM_REASONING_EFFORT: ${WORKBENCH_LLM_REASONING_EFFORT:-none}
+    volumes:
+      - workbench_data:/data
+
+volumes:
+  workbench_data:
